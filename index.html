@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>고래위키</title>
+<style>
+:root{--pri:#4fb3e8;--pri-d:#2b8fc7;--pri-l:#e8f5fd;--bg:#f4f9fc;--card:#fff;--fg:#1d2b36;--mute:#6b7f8d;--bd:#d3e6f1;--red:#d33;}
+body.dark{--pri:#2b8fc7;--pri-d:#4fb3e8;--pri-l:#16303f;--bg:#10181e;--card:#17222a;--fg:#dbe8f0;--mute:#8aa0ae;--bd:#2a3d49;--red:#ff6b6b;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;line-height:1.7}
+a{color:var(--pri-d);text-decoration:none}a:hover{text-decoration:underline}
+a.missing{color:var(--red)}
+#lock{max-width:340px;margin:12vh auto;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:28px;text-align:center}
+#lock h1{margin:0 0 6px;color:var(--pri-d)}#lock p{color:var(--mute);font-size:14px}
+input,textarea,button,select{font:inherit}
+input[type=text],input[type=password],textarea{width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--fg)}
+button{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
+button:hover{background:var(--pri-d)}button.sub{background:var(--pri-l);color:var(--pri-d)}button.danger{background:#d9534f}
+#lock input{margin:8px 0}#lock button{width:100%;margin-top:6px}
+#err{color:var(--red);font-size:13px;min-height:18px}
+header{background:var(--pri);color:#fff;padding:10px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header .logo{font-weight:700;font-size:20px;color:#fff;cursor:pointer}
+header nav{display:flex;gap:4px;flex-wrap:wrap}
+header nav a{color:#fff;padding:4px 9px;border-radius:6px;font-size:14px;cursor:pointer}header nav a:hover{background:rgba(255,255,255,.22);text-decoration:none}
+header form{margin-left:auto;display:flex;gap:4px}header form input{width:170px;padding:6px 10px}
+#dirty{background:#ffb84d;color:#222;font-size:12px;padding:2px 8px;border-radius:10px;display:none}
+main{max-width:980px;margin:18px auto;padding:0 14px}
+article{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:22px 28px}
+.bar{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.bar h1{margin:0;font-size:28px;flex:1;min-width:200px}
+.meta{color:var(--mute);font-size:12px;margin-bottom:12px}
+article h2,article h3,article h4,article h5,article h6{border-bottom:1px solid var(--bd);padding-bottom:3px;margin:22px 0 10px}
+article h2 a.t,article h3 a.t{color:inherit}
+.toc{display:inline-block;background:var(--pri-l);border:1px solid var(--bd);border-radius:8px;padding:8px 16px;margin:8px 0;min-width:200px}
+.fns{border-top:1px solid var(--bd);margin-top:26px;padding-top:8px;font-size:13px;color:var(--mute)}
+blockquote{margin:10px 0;padding:6px 14px;border-left:4px solid var(--pri);background:var(--pri-l)}
+table.w{border-collapse:collapse;margin:10px 0}table.w td{border:1px solid var(--bd);padding:5px 10px}
+pre{background:#0f1a22;color:#d6eaf5;padding:12px;border-radius:8px;overflow:auto}
+code{background:var(--pri-l);padding:1px 5px;border-radius:4px}pre code{background:none;padding:0}
+details{border:1px solid var(--bd);border-radius:8px;padding:6px 12px;margin:8px 0}summary{cursor:pointer;font-weight:600}
+img{max-width:100%}hr{border:0;border-top:1px solid var(--bd)}
+.cats{margin-top:18px;border:1px solid var(--bd);padding:6px 12px;border-radius:8px;font-size:14px}
+#editor{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){#editor{grid-template-columns:1fr}}
+#editor textarea{height:60vh;font-family:Consolas,monospace;font-size:14px;resize:vertical}
+#prev{border:1px solid var(--bd);border-radius:8px;padding:8px 14px;height:60vh;overflow:auto}
+.row{margin:8px 0}.row label{display:block;font-size:13px;color:var(--mute)}
+li.item{margin:6px 0}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:9px 18px;border-radius:20px;display:none;z-index:9}
+</style>
+</head>
+<body>
+<div id="lock">
+  <h1>🐋 고래위키</h1>
+  <p id="lockmsg">비밀번호를 입력하세요</p>
+  <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
+  <input type="password" id="pw2" placeholder="비밀번호 확인" style="display:none">
+  <div id="err"></div>
+  <button id="unlockBtn">열기</button>
+</div>
+<div id="app" style="display:none">
+  <header>
+    <span class="logo" onclick="go('')">🐋 고래위키</span>
+    <nav>
+      <a onclick="go('')">대문</a><a onclick="go('!recent')">최근 변경</a><a onclick="go('!all')">모든 문서</a>
+      <a onclick="randomPage()">랜덤</a><a onclick="go('!new')">새 문서</a><a onclick="go('!settings')">설정</a>
+      <a onclick="toggleDark()">🌓</a><a onclick="lockNow()">🔒</a>
+    </nav>
+    <span id="dirty">저장 안 됨</span>
+    <form onsubmit="doSearch(event)"><input type="text" id="q" placeholder="검색"><button>검색</button></form>
+  </header>
+  <main id="view"></main>
+</div>
+<div id="toast"></div>
+<script>
+'use strict';
+const FILE_DEFAULT='wiki.enc.json';
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const dec=s=>s.replace(/&quot;/g,'"').replace(/&gt;/g,'>').replace(/&lt;/g,'<').replace(/&amp;/g,'&');
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',2800)}
+
+/* ---------- crypto ---------- */
+const te=new TextEncoder(),td=new TextDecoder();
+const b64=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function deriveKey(pw,salt){
+  const base=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptData(obj){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},S.key,te.encode(JSON.stringify(obj))));
+  return JSON.stringify({v:1,salt:b64(S.salt),iv:b64(iv),data:b64(ct)});
+}
+async function decryptBlob(text,pw){
+  const b=JSON.parse(text);const salt=unb64(b.salt);
+  const key=await deriveKey(pw,salt);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(b.iv)},key,unb64(b.data));
+  return {obj:JSON.parse(td.decode(pt)),key,salt};
+}
+
+/* ---------- state / github ---------- */
+const S={pages:{},key:null,salt:null,pw:'',dirty:false};
+const gh=()=>JSON.parse(localStorage.getItem('gw_gh')||'{}');
+const ghOK=g=>g.owner&&g.repo&&g.token;
+const ghUrl=g=>`https://api.github.com/repos/${g.owner}/${g.repo}/contents/${g.path||FILE_DEFAULT}`;
+const ghHead=g=>({Authorization:'Bearer '+g.token,Accept:'application/vnd.github+json'});
+async function ghGet(g){
+  const r=await fetch(ghUrl(g)+'?ref='+encodeURIComponent(g.branch||'main')+'&t='+Date.now(),{headers:ghHead(g)});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('GitHub 읽기 실패 '+r.status);
+  const j=await r.json();
+  if(j.content)return {sha:j.sha,text:td.decode(unb64(j.content.replace(/\n/g,'')))};
+  const raw=await fetch(j.download_url);return {sha:j.sha,text:await raw.text()};
+}
+async function ghPut(g,text){
+  const cur=await ghGet(g);
+  const body={message:'고래위키 저장 '+new Date().toISOString(),content:btoa(text),branch:g.branch||'main'};
+  if(cur)body.sha=cur.sha;
+  const r=await fetch(ghUrl(g),{method:'PUT',headers:ghHead(g),body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('GitHub 저장 실패 '+r.status+' '+(await r.text()).slice(0,120));
+}
+function setDirty(d){S.dirty=d;$('#dirty').style.display=d?'inline-block':'none'}
+async function persist(){
+  const text=await encryptData({v:1,pages:S.pages});
+  const g=gh();
+  if(ghOK(g)){
+    try{await ghPut(g,text);setDirty(false);toast('GitHub에 저장했습니다 (반영까지 1~2분)');return true}
+    catch(e){alert(e.message+'\n암호화 파일을 대신 내려받습니다.')}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  a.download=(g.path||FILE_DEFAULT).split('/').pop();a.click();
+  toast('wiki.enc.json을 내려받았습니다. 저장소에 덮어써 올리세요');setDirty(false);return false;
+}
+window.addEventListener('beforeunload',e=>{if(S.dirty){e.preventDefault();e.returnValue=''}});
+
+/* ---------- unlock ---------- */
+let setupMode=false,loadedText=null;
+async function boot(){
+  try{const r=await fetch(FILE_DEFAULT+'?t='+Date.now(),{cache:'no-store'});
+    if(r.ok)loadedText=await r.text();}catch(e){}
+  if(!loadedText&&!ghOK(gh())){setupMode=true;$('#lockmsg').textContent='처음 오셨네요. 사용할 비밀번호를 정하세요 (분실 시 복구 불가)';$('#pw2').style.display='block';$('#unlockBtn').textContent='위키 만들기';}
+  if(localStorage.dark==='1')document.body.classList.add('dark');
+}
+$('#unlockBtn').onclick=unlock;
+$('#pw').addEventListener('keydown',e=>{if(e.key==='Enter'&&!setupMode)unlock()});
+$('#pw2').addEventListener('keydown',e=>{if(e.key==='Enter')unlock()});
+async function unlock(){
+  const pw=$('#pw').value;$('#err').textContent='';
+  if(!pw)return;
+  $('#unlockBtn').disabled=true;
+  try{
+    if(setupMode){
+      if(pw.length<8){$('#err').textContent='8자 이상으로 정하세요 (길수록 안전)';return}
+      if(pw!==$('#pw2').value){$('#err').textContent='비밀번호가 서로 다릅니다';return}
+      S.salt=crypto.getRandomValues(new Uint8Array(16));S.key=await deriveKey(pw,S.salt);S.pw=pw;
+      S.pages=samplePages();setDirty(true);enter();go('!settings');
+      toast('GitHub 설정을 입력하고 저장하세요');return;
+    }
+    let text=loadedText;const g=gh();
+    if(ghOK(g)){try{const r=await ghGet(g);if(r)text=r.text}catch(e){console.warn(e)}}
+    if(!text)throw new Error('데이터 파일 없음');
+    const r=await decryptBlob(text,pw);
+    S.pages=r.obj.pages;S.key=r.key;S.salt=r.salt;S.pw=pw;enter();
+  }catch(e){$('#err').textContent=e.name==='OperationError'?'비밀번호가 틀렸습니다':'오류: '+e.message}
+  finally{$('#unlockBtn').disabled=false}
+}
+function enter(){$('#lock').style.display='none';$('#app').style.display='block';route()}
+function lockNow(){if(S.dirty&&!confirm('저장하지 않은 변경이 있습니다. 잠글까요?'))return;S.dirty=false;location.hash='';location.reload()}
+function toggleDark(){document.body.classList.toggle('dark');localStorage.dark=document.body.classList.contains('dark')?'1':'0'}
+
+/* ---------- namu-style parser ---------- */
+function newCtx(){return {stash:[],toc:[],hn:[],fns:[],fnNames:{},cats:[],tocUsed:false,hid:0}}
+function keep(c,h){c.stash.push(h);return '\u0001'+(c.stash.length-1)+'\u0002'}
+function restore(c,s){let n=0;while(/\u0001\d+\u0002/.test(s)&&n++<12)s=s.replace(/\u0001(\d+)\u0002/g,(m,i)=>c.stash[i]);return s}
+function safeColor(x){return /^[0-9a-zA-Z]{3,20}$/.test(x)?(/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(x)?'#'+x:x):'inherit'}
+function prep(s,c){
+  s=s.replace(/\{\{\{(.*?)\}\}\}/g,(m,t)=>{
+    let a;
+    if(a=t.match(/^#([0-9a-zA-Z]+)\s+(.*)$/))return keep(c,`<span style="color:${safeColor(a[1])}">`+fmt(esc(a[2]),c)+'</span>');
+    if(a=t.match(/^([+-])([1-5])\s+(.*)$/))return keep(c,`<span style="font-size:${a[1]==='+'?100+a[2]*20:100-a[2]*10}%">`+fmt(esc(a[3]),c)+'</span>');
+    return keep(c,'<code>'+esc(t)+'</code>');
+  });
+  s=esc(s);
+  s=s.replace(/\[\[([^\]]+)\]\]/g,(m,inner)=>{
+    const raw=dec(inner);
+    if(/^파일:/.test(raw)){const u=raw.slice(3).split('|')[0];return /^https?:\/\//.test(u)?keep(c,`<img src="${esc(u)}" alt="">`):''}
+    if(/^분류:/.test(raw)){c.cats.push(raw.slice(3).trim());return ''}
+    const i=raw.indexOf('|');const t=i<0?raw:raw.slice(0,i);const label=i<0?raw:raw.slice(i+1);
+    if(/^https?:\/\//.test(t))return keep(c,`<a href="${esc(t)}" target="_blank" rel="noopener noreferrer">${fmt(esc(label),c)}</a>`);
+    const [title,anchor]=t.split('#');const tt=(title||'').trim()||c.title;
+    const ex=S.pages[tt];
+    return keep(c,`<a class="${ex?'':'missing'}" href="#/${encodeURIComponent(tt)}" ${anchor?`data-anc="${esc(anchor)}"`:''}>${fmt(esc(label),c)}</a>`);
+  });
+  s=s.replace(/\[\*([^\s\]]*)\s?([^\]]*)\]/g,(m,name,text)=>{
+    let n;
+    if(name&&c.fnNames[name]&&!text)n=c.fnNames[name];
+    else{c.fns.push(fmt(text,c));n=c.fns.length;if(name)c.fnNames[name]=n}
+    return keep(c,`<sup><a id="fnr-${n}-${c.fns.length}" href="#" data-goto="fn-${n}">[${name||n}]</a></sup>`);
+  });
+  return fmt(s,c);
+}
+function fmt(s,c){
+  s=s.replace(/'''(.+?)'''/g,'<b>$1</b>').replace(/''(.+?)''/g,'<i>$1</i>')
+     .replace(/__(.+?)__/g,'<u>$1</u>').replace(/~~(.+?)~~/g,'<s>$1</s>')
+     .replace(/\^\^(.+?)\^\^/g,'<sup>$1</sup>').replace(/,,(.+?),,/g,'<sub>$1</sub>')
+     .replace(/\[br\]/gi,'<br>').replace(/\[(date|datetime)\]/gi,new Date().toLocaleDateString('ko-KR'))
+     .replace(/\[(목차|tableofcontents)\]/g,()=>{c.tocUsed=true;return '\u0003TOC\u0003'});
+  return s;
+}
+const reHead=/^(={1,6})(#?)\s+(.*?)\s+\2\1\s*$/;
+const reList=/^(\s+)(\*|1\.|a\.|A\.|i\.|I\.)\s?(.*)$/;
+const rePh=/^\u0001\d+\u0002$/;
+const isBlk=l=>reHead.test(l)||reList.test(l)||/^>/.test(l)||/^\|\|/.test(l)||/^-{4,9}\s*$/.test(l)||rePh.test(l.trim());
+function blocks(text,c){
+  text=text.replace(/\{\{\{#!folding[ \t]*([^\n]*)\n([\s\S]*?)\n\}\}\}/g,(m,t,inner)=>'\n'+keep(c,`<details><summary>${fmt(esc(t.trim()||'펼치기'),c)}</summary><div>`+blocks(inner,c)+'</div></details>')+'\n')
+    .replace(/\{\{\{#!syntax[ \t]*(\w*)\n([\s\S]*?)\n\}\}\}/g,(m,l,code)=>'\n'+keep(c,`<pre><code>${esc(code)}</code></pre>`)+'\n')
+    .replace(/\{\{\{\n([\s\S]*?)\n\}\}\}/g,(m,code)=>'\n'+keep(c,`<pre><code>${esc(code)}</code></pre>`)+'\n');
+  const L=text.split('\n');let out='',i=0;
+  while(i<L.length){
+    const line=L[i];let m;
+    if(/^##/.test(line)||!line.trim()){i++;continue}
+    if(rePh.test(line.trim())){out+=line.trim();i++;continue}
+    if(m=line.match(reHead)){
+      const lv=m[1].length,d=Math.max(lv-1,1);for(let k=0;k<d-1;k++)if(!c.hn[k])c.hn[k]=1;
+      c.hn[d-1]=(c.hn[d-1]||0)+1;c.hn.length=d;const num=c.hn.join('.');const id='h'+(++c.hid);
+      const html=prep(m[3],c);c.toc.push({lv,num,id,html});
+      out+=`<h${lv}  id="${id}"><a class="t" href="#" data-goto="toc">${num}.</a> ${html}</h${lv}>`;i++;continue;
+    }
+    if(/^-{4,9}\s*$/.test(line)){out+='<hr>';i++;continue}
+    if(reList.test(line)){
+      const st=[];let h='';
+      while(i<L.length&&(m=L[i].match(reList))){
+        const ind=m[1].length,t=m[2]==='*'?'ul':'ol';
+        if(!st.length||ind>st[st.length-1].ind){h+=`<${t}><li>`;st.push({ind,t})}
+        else{while(st.length>1&&st[st.length-1].ind>ind){h+=`</li></${st.pop().t}>`}h+='</li><li>'}
+        h+=prep(m[3],c);i++;
+      }
+      while(st.length)h+=`</li></${st.pop().t}>`;
+      out+=h;continue;
+    }
+    if(/^>/.test(line)){
+      const q=[];while(i<L.length&&/^>/.test(L[i])){q.push(L[i].replace(/^>\s?/,''));i++}
+      out+='<blockquote>'+blocks(q.join('\n'),c)+'</blockquote>';continue;
+    }
+    if(/^\|\|/.test(line)){
+      let h='<table class="w">';
+      while(i<L.length&&/^\|\|/.test(L[i])){
+        const cells=L[i].trim().replace(/^\|\|/,'').replace(/\|\|$/,'').split('||');
+        const row=[];
+        for(const raw of cells){
+          if(raw===''&&row.length){row[row.length-1].span++;continue}
+          let t=raw,o={span:1,rs:1,st:''};
+          let a;
+          while(a=t.match(/^<([^>]*)>/)){
+            const p=a[1];let b;
+            if(b=p.match(/^-(\d+)$/))o.span=+b[1];
+            else if(b=p.match(/^\|(\d+)$/))o.rs=+b[1];
+            else if(b=p.match(/^bgcolor=([#\w]+)$/))o.st+=`background:${safeColor(b[1].replace('#',''))};`;
+            else if(p==='(')o.st+='text-align:left;';else if(p===':')o.st+='text-align:center;';else if(p===')')o.st+='text-align:right;';
+            else if(!/^(table|width|height|rowbgcolor|color)/.test(p)){break}
+            t=t.slice(a[0].length);
+          }
+          o.t=t.trim();row.push(o);
+        }
+        h+='<tr>'+row.map(o=>`<td colspan="${o.span}" rowspan="${o.rs}" style="${o.st}">${prep(o.t,c)}</td>`).join('')+'</tr>';i++;
+      }
+      out+=h+'</table>';continue;
+    }
+    const p=[];
+    while(i<L.length&&L[i].trim()&&!/^##/.test(L[i])&&(p.length===0||!isBlk(L[i]))){p.push(prep(L[i],c));i++}
+    out+='<div>'+p.join('<br>')+'</div>';
+  }
+  return out;
+}
+function render(title,text){
+  const c=newCtx();c.title=title;
+  let body=blocks(text,c);
+  if(c.tocUsed){
+    const t='<div class="toc"><b>목차</b>'+c.toc.map(e=>`<div style="margin-left:${Math.max(e.lv-2,0)*14}px"><a href="#" data-goto="${e.id}">${e.num}.</a> ${e.html}</div>`).join('')+'</div>';
+    body=body.replace('\u0003TOC\u0003',t);
+  }
+  body=body.replace(/\u0003TOC\u0003/g,'');
+  if(c.fns.length)body+='<div class="fns">'+c.fns.map((f,k)=>`<div id="fn-${k+1}"><a href="#" data-goto="fnr-${k+1}-${k+1}">[${k+1}]</a> ${f}</div>`).join('')+'</div>';
+  if(c.cats.length)body+='<div class="cats">분류: '+[...new Set(c.cats)].map(x=>`<a href="#/!search/${encodeURIComponent('분류:'+x)}">${esc(x)}</a>`).join(', ')+'</div>';
+  return restore(c,body);
+}
+
+/* ---------- views ---------- */
+const V=()=>$('#view');
+function go(p){location.hash='#/'+(p.startsWith('!')?p:encodeURIComponent(p))}
+function randomPage(){const k=Object.keys(S.pages);if(k.length)go(k[Math.floor(Math.random()*k.length)])}
+function doSearch(e){e.preventDefault();const q=$('#q').value.trim();if(q)location.hash='#/!search/'+encodeURIComponent(q)}
+window.addEventListener('hashchange',()=>{if(S.key)route()});
+function route(){
+  const h=location.hash.replace(/^#\/?/,'');
+  const parts=h.split('/').map(decodeURIComponent);
+  const cmd=parts[0];window.scrollTo(0,0);
+  if(cmd==='!edit')return edit(parts.slice(1).join('/'));
+  if(cmd==='!new')return newDoc();
+  if(cmd==='!recent')return recent();
+  if(cmd==='!all')return allDocs();
+  if(cmd==='!search')return search(parts.slice(1).join('/'));
+  if(cmd==='!settings')return settings();
+  view(h?parts.join('/'):'대문');
+}
+function view(title,redirected){
+  const p=S.pages[title];
+  if(!p){V().innerHTML=`<article><div class="bar"><h1>${esc(title)}</h1></div><p>이 문서는 아직 없습니다.</p><button onclick="go('!edit/${encodeURIComponent(title)}')">새로 만들기</button></article>`;return}
+  const rd=p.t.match(/^#(?:redirect|넘겨주기)\s+(.+)/i);
+  if(rd&&!redirected&&S.pages[rd[1].trim()]){return view(rd[1].trim(),title)}
+  V().innerHTML=`<article><div class="bar"><h1>${esc(title)}</h1><button class="sub" onclick="go('!edit/${encodeURIComponent(title)}')">편집</button></div>
+  <div class="meta">${redirected?`'${esc(redirected)}'에서 넘어옴 · `:''}최근 수정: ${new Date(p.u).toLocaleString('ko-KR')}</div>${render(title,p.t)}</article>`;
+}
+V.click=0;
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[data-goto],a[data-anc]');if(!a)return;
+  if(a.dataset.goto){e.preventDefault();const id=a.dataset.goto==='toc'?null:a.dataset.goto;
+    const t=id?document.getElementById(id):document.querySelector('.toc');if(t)t.scrollIntoView({behavior:'smooth',block:'center'})}
+});
+function edit(title,init){
+  const old=S.pages[title];const txt=init!==undefined?init:(old?old.t:'');
+  V().innerHTML=`<article><div class="bar"><h1>${esc(title)} 편집</h1>
+   <button id="sv">저장</button><button class="sub" id="cn">취소</button>${old?'<button class="sub" id="rn">이름 변경</button><button class="danger" id="dl">삭제</button>':''}</div>
+   <div id="editor"><textarea id="ta" spellcheck="false"></textarea><div id="prev"></div></div>
+   <div class="meta">Ctrl+S 저장 · 문법 예시는 '문법도움말' 문서 참고</div></article>`;
+  const ta=$('#ta');ta.value=txt;
+  const pv=()=>{try{$('#prev').innerHTML=render(title,ta.value)}catch(e){$('#prev').textContent='미리보기 오류'}};
+  pv();ta.addEventListener('input',()=>{clearTimeout(pv.h);pv.h=setTimeout(pv,200)});
+  ta.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();save()}
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('  ',s,ta.selectionEnd,'end')}
+  });
+  async function save(){S.pages[title]={t:ta.value,u:Date.now()};setDirty(true);$('#sv').disabled=true;
+    await persist();$('#sv').disabled=false;go(title)}
+  $('#sv').onclick=save;$('#cn').onclick=()=>go(old?title:'');
+  if(old){
+    $('#dl').onclick=async()=>{if(!confirm('정말 삭제할까요?'))return;delete S.pages[title];setDirty(true);await persist();go('')};
+    $('#rn').onclick=async()=>{const n=prompt('새 제목',title);if(!n||n===title)return;if(S.pages[n])return alert('이미 있는 제목입니다');
+      S.pages[n]={t:ta.value,u:Date.now()};delete S.pages[title];setDirty(true);await persist();go(n)};
+  }
+}
+function newDoc(){
+  const t=prompt('새 문서 제목');if(!t||!t.trim()){history.back();return}
+  go('!edit/'+encodeURIComponent(t.trim()));
+}
+function list(arr,fmtf){return arr.length?'<ul>'+arr.map(fmtf).join('')+'</ul>':'<p>없음</p>'}
+const link=t=>`<a href="#/${encodeURIComponent(t)}">${esc(t)}</a>`;
+function recent(){
+  const a=Object.entries(S.pages).sort((x,y)=>y[1].u-x[1].u).slice(0,50);
+  V().innerHTML='<article><div class="bar"><h1>최근 변경</h1></div>'+list(a,([t,p])=>`<li>${link(t)} <span class="meta">${new Date(p.u).toLocaleString('ko-KR')}</span></li>`)+'</article>';
+}
+function allDocs(){
+  const a=Object.keys(S.pages).sort((x,y)=>x.localeCompare(y,'ko'));
+  V().innerHTML=`<article><div class="bar"><h1>모든 문서 (${a.length})</h1></div>`+list(a,t=>`<li>${link(t)}</li>`)+'</article>';
+}
+function search(q){
+  const ql=q.toLowerCase();
+  const r=Object.entries(S.pages).map(([t,p])=>{
+    const ti=t.toLowerCase().includes(ql),i=p.t.toLowerCase().indexOf(ql);
+    return (ti||i>=0)?{t,s:ti?2:1,sn:i>=0?p.t.slice(Math.max(0,i-30),i+80).replace(/\n/g,' '):''}:null}).filter(Boolean).sort((a,b)=>b.s-a.s);
+  V().innerHTML=`<article><div class="bar"><h1>검색: ${esc(q)}</h1></div>`+list(r,x=>`<li>${link(x.t)}<div class="meta">${esc(x.sn)}</div></li>`)+'</article>';
+}
+function settings(){
+  const g=gh();
+  V().innerHTML=`<article><div class="bar"><h1>설정</h1></div>
+  <h3>GitHub 저장 연동 (웹 편집 내용을 자동 커밋)</h3>
+  <div class="row"><label>소유자(계정명)</label><input type="text" id="g1" value="${esc(g.owner||'')}"></div>
+  <div class="row"><label>저장소 이름</label><input type="text" id="g2" value="${esc(g.repo||'')}"></div>
+  <div class="row"><label>브랜치</label><input type="text" id="g3" value="${esc(g.branch||'main')}"></div>
+  <div class="row"><label>데이터 파일 경로</label><input type="text" id="g4" value="${esc(g.path||FILE_DEFAULT)}"></div>
+  <div class="row"><label>Personal Access Token (이 브라우저에만 저장, Contents 읽기/쓰기 권한만)</label><input type="password" id="g5" value="${esc(g.token||'')}"></div>
+  <button id="gs">연동 저장 + 지금 동기화</button> <button class="sub" id="gc">토큰 지우기</button>
+  <h3>비밀번호 변경</h3>
+  <div class="row"><input type="password" id="np" placeholder="새 비밀번호 (8자 이상)"></div><button id="cp">변경하고 저장</button>
+  <h3>백업</h3>
+  <button class="sub" id="ex">암호화 파일 내려받기</button> <button class="sub" id="ex2">평문(JSON) 백업</button>
+  </article>`;
+  $('#gs').onclick=async()=>{
+    localStorage.setItem('gw_gh',JSON.stringify({owner:$('#g1').value.trim(),repo:$('#g2').value.trim(),branch:$('#g3').value.trim()||'main',path:$('#g4').value.trim()||FILE_DEFAULT,token:$('#g5').value.trim()}));
+    await persist();};
+  $('#gc').onclick=()=>{const x=gh();delete x.token;localStorage.setItem('gw_gh',JSON.stringify(x));settings();toast('토큰을 지웠습니다')};
+  $('#cp').onclick=async()=>{const n=$('#np').value;if(n.length<8)return alert('8자 이상');
+    S.salt=crypto.getRandomValues(new Uint8Array(16));S.key=await deriveKey(n,S.salt);S.pw=n;setDirty(true);await persist()};
+  $('#ex').onclick=async()=>{const t=await encryptData({v:1,pages:S.pages});dl(t,'wiki.enc.json')};
+  $('#ex2').onclick=()=>dl(JSON.stringify(S.pages,null,2),'whalewiki-backup.json');
+}
+function dl(t,n){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t]));a.download=n;a.click()}
+
+/* ---------- sample pages ---------- */
+function samplePages(){const n=Date.now();return {
+'대문':{u:n,t:`[목차]
+== 고래위키에 오신 것을 환영합니다 ==
+나만의 비밀 위키입니다. 내용은 비밀번호로 암호화되어 저장됩니다.[* 암호화 방식은 AES-256-GCM 입니다.]
+ * 우측 상단 '새 문서'로 문서를 만들 수 있습니다.
+ * 문법은 [[문법도움말]]을 참고하세요.
+== 바로가기 ==
+ * [[고래]]
+ * [[없는 문서]] (빨간 링크 = 아직 없는 문서)
+[[분류:대문]]`},
+'문법도움말':{u:n,t:`[목차]
+== 텍스트 ==
+'''굵게''', ''기울임'', __밑줄__, ~~취소선~~, 위첨자^^2^^, 아래첨자,,2,,
+{{{#red 빨간 글씨}}}, {{{#0099ff 하늘색}}}, {{{+2 큰 글씨}}}, {{{인라인 코드}}}
+== 링크 ==
+[[대문]] / [[대문|표시 이름]] / [[https://github.com|외부 링크]]
+== 목록 ==
+ * 항목 1
+  * 하위 항목
+ * 항목 2
+ 1. 번호 1
+ 1. 번호 2
+== 표 ==
+||<bgcolor=#cfeaff> 이름 ||<bgcolor=#cfeaff> 종류 ||
+|| 고래 || 포유류 ||
+||<-2> 두 칸 합치기 ||
+== 인용·구분선 ==
+> 인용문입니다.
+----
+== 접기·코드 ==
+{{{#!folding 눌러서 펼치기
+숨겨진 내용
+}}}
+{{{#!syntax javascript
+console.log('고래');
+}}}
+== 각주 ==
+본문[* 첫 번째 각주]과 또 하나[* 두 번째 각주].
+== 넘겨주기 ==
+문서 첫 줄에 #redirect 문서명`},
+'고래':{u:n,t:`== 개요 ==
+고래는 바다에 사는 '''포유류'''입니다.[* 아가미가 아닌 폐로 숨을 쉽니다.]
+== 종류 ==
+ * [[대문|돌아가기]]
+[[분류:동물]]`}}}
+boot();
+</script>
+</body>
+</html>
